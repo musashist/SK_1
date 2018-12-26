@@ -44,6 +44,52 @@ void *ThreadBehavior(void *t_data)
 
 }
 
+char** divide2(char* in,const char s_delim)
+{
+    char **wynik=0;
+    char *tmp=in;
+    char *rest=in;
+    char* token;
+    char* lastsep=0;
+    size_t licz=0;
+    size_t idx=0;
+    char delim[2]; //jednoznakowy separator
+    delim[0]=s_delim;
+    delim[1]=0;
+    
+    //Policz ile bedzie oddzielonych od siebie wyrazow
+    while(*rest) //iterujemy po wszystkich wyrazach
+    {
+        if (s_delim== *rest){licz++;lastsep=rest;}
+        rest++;
+    }
+
+    //if(licz == 1){
+    //  wynik[0] = lastsep;
+    //  return wynik;
+    //}
+
+    printf("Wlicz1: %zu \n",licz);        
+    
+    // Add space for trailing token. 
+    licz += lastsep < (in + strlen(in) - 1);
+
+    // Add space for terminating null string so caller
+     //  knows where the list of returned strings ends. 
+    licz++;
+
+    printf("Wlicz2: %zu \n",licz); 
+    wynik= malloc(sizeof(char*)*(licz));
+    while((token=strtok_r(tmp,delim,&tmp))) //iterujemy po wszystkich wyrazach
+    {
+        *(wynik+idx)=strdup(token);//zapisujemy do tablicy wyjsciowej
+        //printf("wynik[%d] = %s \n",idx,*(wynik+idx));        
+        idx++;
+    }
+
+    return wynik;
+}
+
 /*
 //funkcja obsługująca połączenie z serwerem
 void handleConnection(int connection_socket_descriptor) {
@@ -86,112 +132,150 @@ void handleConnection(int connection_socket_descriptor) {
 
 int main (int argc, char *argv[])
 { 
-   int connection_socket_descriptor,connection_socket_descriptor2;//
-   int connect_result,connect2_result;
-   struct sockaddr_in server_address, client_address;
-   //struct hostent* server_host_entity;
-   char bufor[10];
+   int connection_socket_descriptor,connection_socket_descriptor2,listen_socket_descriptior;
+   int sock1, sock2, sock3;
+   int connect_result,connect2_result,connect3_result;
+   int sock1_int,sock2_int,sock3_int;
+   struct sockaddr_in klient,klient2 ,serwer;
+   int k1;
+   char bufor[100];
 
-   if (argc != 3)
+   if (argc != 4)
    {
      fprintf(stderr, "Sposób użycia: %s server_name port_number\n", argv[0]);
      exit(1);
    }
 
 
-   connection_socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
-   connection_socket_descriptor2 = socket(AF_INET, SOCK_STREAM, 0);
+   sock1 = socket(AF_INET, SOCK_STREAM, 0);
+   sock2 = socket(AF_INET, SOCK_STREAM, 0);
+   sock3 = socket(AF_INET, SOCK_STREAM, 0);
 
-   if (connection_socket_descriptor2 < 0)
+   if (sock3 < 0)
    {
-      fprintf(stderr, "%s: Błąd przy probie utworzenia gniazda.\n", argv[0]);
+      fprintf(stderr, "%s: Błąd przy probie utworzenia gniazda_3.\n", argv[0]);
       exit(1);
    }
 
-   memset(&server_address, 0, sizeof(struct sockaddr));
-   memset(&client_address, 0, sizeof(struct sockaddr));
+   memset(&klient, 0, sizeof(struct sockaddr));
+   memset(&klient2, 0, sizeof(struct sockaddr));
+   memset(&serwer, 0, sizeof(struct sockaddr));
 
-   server_address.sin_family = AF_INET;
-   client_address.sin_family = AF_INET;
+   klient.sin_family = AF_INET;
+   klient2.sin_family = AF_INET;
+   serwer.sin_family = AF_INET;
+   serwer.sin_port = htons(atoi(argv[3]));
+   serwer.sin_addr.s_addr = INADDR_ANY;
 
-   inet_pton(AF_INET,"127.0.0.1",&(server_address.sin_addr));
-   inet_pton(AF_INET,"127.0.0.1",&(client_address.sin_addr));
+   inet_pton(AF_INET,"127.0.0.1",&(klient.sin_addr));
+   inet_pton(AF_INET,"127.0.0.1",&(klient2.sin_addr));
 
 
-   //memcpy(&server_address.sin_addr.s_addr, server_host_entity->h_addr, server_host_entity->h_length);
-   server_address.sin_port = htons(atoi(argv[1]));
-   //printf("port2 = %s\n", argv[2]);
-   client_address.sin_port = htons(atoi(argv[2]));
+   klient.sin_port = htons(atoi(argv[1]));
+   klient2.sin_port = htons(atoi(argv[2]));
 
-   connect_result = connect(connection_socket_descriptor, (struct sockaddr*)&server_address, sizeof(struct sockaddr));
-   connect2_result = connect(connection_socket_descriptor2, (struct sockaddr*)&client_address, sizeof(struct sockaddr));
-   if (connect2_result < 0)
+   int one = 1;
+   setsockopt(sock1, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));   //ustawianie ponownego uzywania gniazd, zeby nam wszystkich nie zablokowalo lul
+   setsockopt(sock1_int, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+   setsockopt(sock2, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+   setsockopt(sock2_int, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+   setsockopt(sock3, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+   setsockopt(sock3_int, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+
+   sock1_int = connect(sock1, (struct sockaddr*)&klient, sizeof(struct sockaddr));
+   sock2_int = connect(sock2, (struct sockaddr*)&klient2, sizeof(struct sockaddr));
+
+   if (sock2_int < 0)
    {
       fprintf(stderr, "%s: Błąd przy próbie połączenia z serwerem2 (%s:%i).\n", argv[0], argv[1], atoi(argv[2]));
       exit(1);
    }
+   
+   k1 = bind(sock3,(struct sockaddr*)&serwer,sizeof(serwer));
+   k1 = listen(sock3,3);
+   sock3_int = accept(sock3,NULL, NULL);
 
-  // handleConnection(connection_socket_descriptor);
+   if (sock3_int < 0)
+   {
+      fprintf(stderr, "%s: Błąd przy próbie połączenia do przesylu (%s:%i).\n", argv[0], argv[1], atoi(argv[3]));
+      exit(1);
+   }
+   const char a = ' ';
     while(1)    
     {
-        fgets(bufor,10, stdin);
-        if (strcmp(bufor, "push\n") == 0){ //czy przed rozpoczeciem wysylania czekamy na akceptacje czy cos
-          write(connection_socket_descriptor,bufor,strlen(bufor));
-          //read()
+
+        fgets(bufor,30, stdin);
+        write(sock1,bufor,strlen(bufor));
+        char** buf_temp = divide2(bufor,a);
+        //printf("%s\n",buf_temp[0]);
+        if (strcmp(buf_temp[0], "push") == 0){ //uprasza sie o korzystanie z push2 zamiast z tego
+          printf("wszedl push przynajmniej\n");
+        }
+        
+        else if (strcmp(buf_temp[0], "push2") == 0){
+
+          printf("bobobo\n");
+          
           char buffer[100];
           int n,c,l;
-          l,n = 0;
+          n = 0;
+          l=0;
           char d;
-          FILE *file = fopen("add.txt", "r");
+
+          int len = strlen(buf_temp[1]);
+          buf_temp[1][len-1] = '\0';
+
+          FILE *file = fopen(buf_temp[1], "r");
           if (file == NULL)
             printf("blad odczytu");
           else
             printf("ok\n");
-          //int m = read(file, buffer, 10);
+
           while ((c = getc(file)) != EOF){
+            printf("%c\n",c);
             buffer[l] = c;
             l+=1;
           }
           printf("%s\n",buffer);
-          /*
-          while ((c = fgetc(file)) != EOF)
-          {
-              d = c;
-              printf("%c\n",d);
 
-              write(connection_socket_descriptor,d,sizeof(d));
-          }
-          */
-          sleep(2);
-          send(connection_socket_descriptor2, buffer, l, 0);
-          printf("the file was sent successfully");   
+          send(sock2, buffer, l, 0);
           
-        }
-
-        if (strcmp(bufor, "push2\n") == 0){
-          char buffer[100];
-          int n,c;
-          n = 0;
-          char d;
-          FILE *file = fopen("add.txt", "r");
-          if (file == NULL)
-            printf("blad odczytu");
-          else
-            printf("ok\n");
-          int m = read(file, buffer, 100);
-
-          send(connection_socket_descriptor2, buffer, m, 0);
           printf("the file was sent successfully");   
 
+        
+        }
+        else if (strcmp(buf_temp[0], "pull") == 0){
+          //write(sock1,bufor,strlen(bufor));
+          char buffer[100];
+
+          int amount;
+          amount = read(sock3_int,buffer,10);
+
+          int len = strlen(buf_temp[1]);
+          buf_temp[1][len-1] = '\0';
+
+          FILE *fp;
+          fp=fopen(buf_temp[1],"w");
+          printf("%s\n", "buffer");
+          fwrite(buffer,1,amount,fp); 
+          //fwrite("bobo",1,amount,fp); 
+
+          printf("pull ended\n");
+          fclose(fp);
+
+
 
         }
-        else{          
-           write(connection_socket_descriptor,bufor,strlen(bufor));
+        else{
+          printf("nie pasuje\n");          
+           write(sock1,buf_temp[0],strlen(buf_temp[0]));
         }
+        memset(&bufor[0], 0, sizeof(bufor));
+        
     }
+  
 
-
-   close(connection_socket_descriptor);
+   close(sock1);
    return 0;
 
 } 
