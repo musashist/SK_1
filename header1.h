@@ -178,8 +178,7 @@ void removeFile(const char *filepath)
 }
 int removeFolder(const char *path)
 {
-    printf("%s \n",path);     
-    size_t dlug_sciez;
+    printf("%s \n",path);
     char *peln_sciezka;
     DIR *dir;
     struct stat stat_sciez,stat_entry;
