@@ -19,6 +19,75 @@
 #define REQ_ARG_LENGTH 20
 #define MAX_NR_ARG 20
 
+int sendSize(int sock,uint32_t num)
+{
+    uint32_t conv=htonl(num);
+    char *data=(char*)&conv;
+    int left = sizeof(conv);//rozmiar w bajtach uint32_t
+    int rc;
+    do {
+        rc = write(sock, data, left);
+        if (rc > 0){
+            data += rc;
+            left -= rc;
+        }
+        printf("%08x\n %d\n",conv,rc);
+    }
+    while (left > 0);
+    return 0;
+}
+int readSize(int sock,uint32_t *num)
+{
+    uint32_t ret;
+    char *data = (char*)&ret;
+    int left = sizeof(ret); //rozmiar w bajtach uint32_t
+    sleep(1);    
+    int rc;
+    do {
+        rc = read(sock, data, left);
+        if (rc > 0) { 
+            data += rc;
+            left -= rc;
+        }
+        printf("%08x\n %d\n",ret,rc);
+    }
+    while (left > 0);
+    *num = ntohl(ret);
+    return 0;
+}
+
+void Write(int sock,char *buf,unsigned int length)
+{
+    int ile,ile_to_send,ile_przeslano;
+    ile=0;ile_to_send=length;
+    ile_przeslano=0;
+    while(ile!=ile_to_send)
+    {
+           ile_przeslano=write(sock,buf+ile,ile_to_send-ile);
+           ile+=ile_przeslano;	
+    }
+}
+
+int Read(int sock,char *buf,unsigned int length)
+{
+    int ile,ile_to_read,ile_przeczytano;
+    ile=0;ile_to_read=length;
+    do
+    {
+           //ile_przeczytano=read(sock, buf+ile,ile_to_read-ile);
+           ile_przeczytano=recv(sock, buf+ile,ile_to_read-ile,0); 
+           ile+=ile_przeczytano;	
+          // printf("Przeczytalem: %d\n",ile_przeczytano); 
+      /*     if(*(buf+ile+ile_przeczytano)=='\0'){
+                buf[ile+ile_przeczytano]=0;                
+                printf("koniec transmisji\n");
+                ile_przeczytano=0;            
+            }*/ 
+    }
+    while(ile!=ile_to_read && ile_przeczytano>0);    
+    return ile;
+}
+
 int dlugosc(char a[],char b[])
 {
     size_t aw,bw;
